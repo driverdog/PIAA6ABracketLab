@@ -1,0 +1,696 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PIAA 6A Bracket Lab</title>
+<style>
+  /* Layout: fixed-column tournament bracket that scrolls horizontally inside its own rail;
+     control bar on top, scenario strip below it, champion banner at the right end. */
+  :root {
+    --bg: #f4f2ec;
+    --panel: #fffefb;
+    --ink: #1a2238;
+    --ink-soft: #5a6076;
+    --line: #d8d3c6;
+    --line-soft: #e8e4da;
+    --wire: #b3ae9f;      /* bracket connector lines */
+    --navy: #13284b;      /* PIAA navy */
+    --gold: #b8923f;      /* PIAA gold */
+    --gold-soft: #e7d4a6;
+    --accent: #2f6f8f;    /* court teal, used for interactive/winner */
+    --win: #1f7a4d;
+    --win-bg: #e3f2e9;
+    --shadow: 0 1px 2px rgba(20,30,50,.08), 0 6px 18px rgba(20,30,50,.06);
+    --radius: 9px;
+    --f-display: "Oswald", "Arial Narrow", sans-serif;
+    --f-body: "Inter", system-ui, sans-serif;
+    --f-num: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10141f; --panel: #19202f; --ink: #eef1f7; --ink-soft: #9aa3bb;
+      --line: #313a4f; --line-soft: #242c3c; --navy: #9db8e6; --gold: #d8b968;
+      --gold-soft: #3a3320; --accent: #5fb3d4; --win: #4fc584; --win-bg: #15321f; --wire: #44506a;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(0,0,0,.35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10141f; --panel: #19202f; --ink: #eef1f7; --ink-soft: #9aa3bb;
+    --line: #313a4f; --line-soft: #242c3c; --navy: #9db8e6; --gold: #d8b968;
+    --gold-soft: #3a3320; --accent: #5fb3d4; --win: #4fc584; --win-bg: #15321f; --wire: #44506a;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 22px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--f-body); line-height: 1.4; }
+  .wrap { padding-block: 18px; padding-inline: clamp(16px, 4vw, 40px); }
+
+  /* ---- Masthead ---- */
+  header.mast { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 3px solid var(--gold); padding-bottom: 12px; }
+  .mast h1 { font-family: var(--f-display); font-weight: 600; text-transform: uppercase; letter-spacing: .02em; font-size: clamp(22px, 3.4vw, 34px); margin: 0; line-height: 1; color: var(--navy); text-wrap: balance; }
+  .mast .sub { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; letter-spacing: .01em; }
+  .mast .ball { font-family: var(--f-display); font-weight: 600; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); border: 1.5px solid var(--gold); border-radius: 100px; padding: 5px 12px; white-space: nowrap; }
+
+  /* ---- Control bar ---- */
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+  .btn { font-family: var(--f-body); font-size: 13px; font-weight: 600; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 8px 14px; border-radius: 7px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: border-color .12s, transform .05s; }
+  .btn:hover { border-color: var(--accent); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+  :root[data-theme="dark"] .btn.primary { color: #0e1422; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary { color: #0e1422; } }
+  .btn.ghost { background: transparent; }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .spacer { flex: 1; }
+
+  /* ---- Scenario strip ---- */
+  .scenarios { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+  .scenarios .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft); font-weight: 700; margin-right: 2px; }
+  .chip { font-size: 12.5px; font-family: var(--f-body); border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 6px 10px 6px 12px; border-radius: 100px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+  .chip.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--panel)); font-weight: 600; }
+  .chip .x { font-size: 15px; line-height: 1; color: var(--ink-soft); border: none; background: none; cursor: pointer; padding: 0 1px; border-radius: 3px; }
+  .chip .x:hover { color: #c0392b; }
+  .chip.dirty .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); display: inline-block; }
+
+  /* ---- Bracket rail ---- */
+  .rail-wrap { margin-top: 18px; overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; }
+  .bracket { display: flex; gap: 0; min-width: min-content; align-items: stretch; position: relative; }
+  .connectors { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 0; overflow: visible; }
+  .round { display: flex; flex-direction: column; min-width: 210px; flex: 0 0 auto; padding: 0 14px; position: relative; z-index: 1; }
+  .round.r-final { min-width: 230px; }
+  .round-body { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-around; }
+  .round.r-final .round-body { justify-content: center; gap: 4px; }
+  .round-head { flex: 0 0 auto; text-align: center; margin-bottom: 8px; }
+  .round-head .rn { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .08em; font-size: 13px; font-weight: 600; color: var(--navy); }
+  .round-head .rd { font-size: 10.5px; color: var(--ink-soft); letter-spacing: .02em; }
+
+  /* match card */
+  .match { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); margin: 5px 0; overflow: hidden; position: relative; z-index: 1; }
+  .match .gid { font-family: var(--f-num); font-size: 9.5px; color: var(--ink-soft); text-align: right; padding: 3px 8px 0; letter-spacing: .04em; }
+  .slot { display: flex; align-items: stretch; gap: 0; border-top: 1px solid var(--line-soft); }
+  .slot:first-of-type { border-top: none; }
+  .seed { font-family: var(--f-num); font-size: 10.5px; font-weight: 600; color: #fff; background: var(--navy); display: flex; align-items: center; justify-content: center; min-width: 46px; padding: 0 5px; text-align: center; letter-spacing: -.02em; }
+  .seed.playin { background: var(--gold); }
+  :root[data-theme="dark"] .seed { color: #0e1422; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seed { color: #0e1422; } }
+  .pick { flex: 1; min-width: 0; display: flex; align-items: center; }
+  .pick select { width: 100%; border: none; background: transparent; color: var(--ink); font-family: var(--f-body); font-size: 12.5px; padding: 9px 8px; cursor: pointer; appearance: none; -webkit-appearance: none; min-width: 0; text-overflow: ellipsis; }
+  .pick select:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
+  .pick select option { color: #111; }
+  .advance { border: none; background: transparent; cursor: pointer; width: 34px; display: flex; align-items: center; justify-content: center; color: var(--line); border-left: 1px solid var(--line-soft); font-size: 15px; transition: color .12s, background .12s; }
+  .advance:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .advance:disabled { cursor: default; opacity: .35; }
+  .advance:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .slot.winner { background: var(--win-bg); }
+  .slot.winner .pick select { font-weight: 700; color: var(--win); }
+  .slot.winner .advance { color: var(--win); }
+  .slot.winner .seed { background: var(--win); }
+
+  .match.decided { border-color: color-mix(in srgb, var(--win) 45%, var(--line)); }
+
+  /* final / champion */
+  .final-site { font-size: 10.5px; color: var(--ink-soft); text-align: center; margin-top: 10px; line-height: 1.5; }
+  .champ { margin-top: 14px; background: linear-gradient(135deg, var(--navy), color-mix(in srgb, var(--navy) 70%, #000)); border-radius: var(--radius); padding: 16px 14px; text-align: center; box-shadow: var(--shadow); border: 2px solid var(--gold); }
+  .champ .lbl { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .18em; font-size: 11px; color: var(--gold); }
+  .champ .name { font-family: var(--f-display); font-weight: 600; font-size: 17px; color: #fff; margin-top: 5px; line-height: 1.15; min-height: 1.2em; }
+  .champ .name.empty { color: rgba(255,255,255,.4); font-weight: 400; font-style: italic; font-family: var(--f-body); font-size: 13px; }
+
+  .foot { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; font-size: 11.5px; color: var(--ink-soft); max-width: 70ch; }
+  .foot a { color: var(--accent); }
+  .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--navy); color: #fff; font-size: 13px; padding: 10px 18px; border-radius: 100px; box-shadow: var(--shadow); opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 500px) {
+    .round { min-width: 188px; }
+    .seed { min-width: 40px; }
+  }
+
+  /* ---- Print sheet (hidden on screen; the only thing shown when printing) ---- */
+  .print-sheet { display: none; }
+  @media print {
+    @page { size: landscape; margin: 12mm; }
+    .wrap, .toast { display: none !important; }
+    .print-sheet {
+      display: block !important;
+      color: #000; background: #fff;
+      font-family: var(--f-body);
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .ps-head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2.5px solid #b8923f; padding-bottom: 8px; margin-bottom: 4px; gap: 16px; }
+    .ps-title { font-family: var(--f-display); text-transform: uppercase; font-weight: 600; font-size: 20px; color: #13284b; line-height: 1.05; letter-spacing: .01em; }
+    .ps-meta { font-size: 11px; color: #444; margin-top: 3px; }
+    .ps-champ { text-align: right; white-space: nowrap; }
+    .ps-champ .cl { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .14em; font-size: 9px; color: #b8923f; }
+    .ps-champ .cn { font-family: var(--f-display); font-weight: 600; font-size: 16px; color: #13284b; }
+    .ps-champ .cn.empty { color: #999; font-style: italic; font-weight: 400; font-family: var(--f-body); font-size: 12px; }
+    .ps-bracket { display: flex; margin-top: 10px; align-items: stretch; }
+    .ps-round { flex: 1; display: flex; flex-direction: column; justify-content: space-around; padding: 0 6px; }
+    .ps-rh { text-align: center; font-family: var(--f-display); text-transform: uppercase; letter-spacing: .06em; font-size: 10px; font-weight: 600; color: #13284b; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-bottom: 6px; }
+    .ps-rh small { display: block; color: #666; font-family: var(--f-body); letter-spacing: 0; font-weight: 400; font-size: 8.5px; }
+    .ps-match { border: 1px solid #bbb; border-radius: 5px; margin: 6px 0; break-inside: avoid; }
+    .ps-slot { display: flex; align-items: center; font-size: 10.5px; border-top: 1px solid #e3e3e3; padding: 4px 6px; gap: 6px; }
+    .ps-slot:first-child { border-top: none; }
+    .ps-seed { font-family: var(--f-num); font-size: 8.5px; color: #13284b; min-width: 42px; }
+    .ps-team { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ps-team.tbd { color: #999; font-style: italic; }
+    .ps-slot.win { background: #eef4f0; }
+    .ps-slot.win .ps-team { font-weight: 700; }
+    .ps-slot.win::after { content: "advances \2192"; color: #1f7a4d; font-weight: 700; font-size: 8px; letter-spacing: .03em; white-space: nowrap; }
+    .ps-gid { font-family: var(--f-num); font-size: 7.5px; color: #999; text-align: right; padding: 2px 6px 0; }
+    .ps-foot { margin-top: 10px; border-top: 1px solid #ddd; padding-top: 6px; font-size: 8.5px; color: #666; }
+  }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+
+<div class="wrap">
+  <header class="mast">
+    <div>
+      <h1>2026 PIAA 6A Girls' Volleyball — Bracket Lab</h1>
+      <div class="sub">Pick each district seed, run the winners, and save what-if scenarios. Championship bracket, 16 teams.</div>
+    </div>
+    <div class="ball">State Championship</div>
+  </header>
+
+  <div class="bar">
+    <button class="btn" id="btn-random">🎲 Random fill</button>
+    <button class="btn ghost" id="btn-clearwin">Clear winners</button>
+    <button class="btn ghost" id="btn-reset">Reset seeds</button>
+    <span class="spacer"></span>
+    <button class="btn" id="btn-print" title="Print / save a clean sheet of your picks">🖨 Print picks</button>
+    <button class="btn" id="btn-theme" title="Toggle theme">◐ Theme</button>
+    <button class="btn primary" id="btn-save">＋ Save scenario</button>
+  </div>
+
+  <div class="scenarios" id="scenarios">
+    <span class="lbl">Scenarios</span>
+  </div>
+
+  <div class="rail-wrap">
+    <div class="bracket" id="bracket"></div>
+  </div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<div class="print-sheet" id="printsheet" aria-hidden="true"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ----------------------------------------------------------------------
+   DATA — PIAA Class 6A girls' volleyball schools by district (2026).
+   Source: PIAA classification list for Girls Volleyball, Class AAAAAA.
+---------------------------------------------------------------------- */
+const DISTRICTS = {
+  1: ["Abington","Avon Grove","Bensalem","Boyertown","Central Bucks East","Central Bucks South","Central Bucks West","Cheltenham","Chester","Coatesville","Conestoga","Council Rock South","Council Rock North","Downingtown East","Downingtown West","Garnet Valley","Great Valley","Harry S Truman","Haverford","Lower Merion","Methacton","Neshaminy","Norristown","North Penn","Owen J Roberts","Penn Wood","Pennridge","Pennsbury","Perkiomen Valley","Plymouth Whitemarsh","Quakertown","Ridley","Souderton","Spring-Ford","Springfield (Delco)","Upper Darby","Upper Merion","William Tennent","Wissahickon"],
+  2: ["Delaware Valley","Hazleton Area","Pittston Area","Scranton","West Scranton","Wilkes-Barre Area","Wyoming Valley West"],
+  3: ["Carlisle","Cedar Cliff","Cedar Crest","Central Dauphin East","Central Dauphin","Central York","Chambersburg","Conestoga Valley","Cumberland Valley","Dallastown","Ephrata","Governor Mifflin","Harrisburg","Hempfield (D3)","J P McCaskey","Lebanon","Manheim Township","Mechanicsburg","Muhlenberg","Penn Manor","Reading","Red Lion","South Western","Waynesboro","William Penn","Wilson","York County School of Technology"],
+  4: ["Williamsport"],
+  6: ["Altoona","State College"],
+  7: ["Baldwin","Butler","Canon-McMillan","Hempfield Area","Mount Lebanon","North Allegheny","Norwin","Pine-Richland","Seneca Valley"],
+  10: ["Erie High","McDowell"],
+  11: ["East Stroudsburg South","Easton","Emmaus","Freedom","Liberty","Louis E Dieruff","Nazareth","Northampton","Parkland","Pocono Mountain West","Stroudsburg","Whitehall","William Allen"],
+  12: ["Abraham Lincoln","Central","George Washington","Kensington","Northeast"]
+};
+
+/* ----------------------------------------------------------------------
+   BRACKET STRUCTURE — from the official 2026 6A bracket PDF.
+   First-round slots top→bottom. Each "seed" is district-rank; "or" slots
+   are inter-district play-ins that draw from both districts.
+---------------------------------------------------------------------- */
+// id, round, game number from PDF, two feeders.
+// A feeder is either a SEED (first round) or a prior game id.
+const SEED = (label, dists, note) => ({ type:"seed", label, dists, note });
+const FROM = (gid) => ({ type:"from", gid });
+
+const GAMES = [
+  // First round (611–618), Nov 11
+  { id:"611", round:0, a:SEED("1-1",[1]),           b:SEED("3-3",[3]) },
+  { id:"612", round:0, a:SEED("12-1",[12]),         b:SEED("1-5",[1]) },
+  { id:"613", round:0, a:SEED("6-1 / 10-1*",[6,10],"play-in"), b:SEED("3-2",[3]) },
+  { id:"614", round:0, a:SEED("2-1 / 4-1*",[2,4],"play-in"),   b:SEED("1-3",[1]) },
+  { id:"615", round:0, a:SEED("3-1",[3]),           b:SEED("1-6",[1]) },
+  { id:"616", round:0, a:SEED("11-1",[11]),         b:SEED("1-4",[1]) },
+  { id:"617", round:0, a:SEED("1-2",[1]),           b:SEED("11-2",[11]) },
+  { id:"618", round:0, a:SEED("7-1",[7]),           b:SEED("3-4",[3]) },
+  // Quarterfinals (621–624), Nov 14
+  { id:"621", round:1, a:FROM("611"), b:FROM("612") },
+  { id:"622", round:1, a:FROM("613"), b:FROM("614") },
+  { id:"623", round:1, a:FROM("615"), b:FROM("616") },
+  { id:"624", round:1, a:FROM("617"), b:FROM("618") },
+  // Semifinals (631–632), Nov 17
+  { id:"631", round:2, a:FROM("621"), b:FROM("622") },
+  { id:"632", round:2, a:FROM("623"), b:FROM("624") },
+  // Final (641), Nov 20
+  { id:"641", round:3, a:FROM("631"), b:FROM("632") }
+];
+const GById = Object.fromEntries(GAMES.map(g=>[g.id,g]));
+const ROUND_META = [
+  { rn:"First Round", rd:"Wed · Nov 11" },
+  { rn:"Quarterfinals", rd:"Sat · Nov 14" },
+  { rn:"Semifinals", rd:"Tue · Nov 17" },
+  { rn:"Final", rd:"Fri · Nov 20" }
+];
+const FINAL_SITE = "Saint Francis University · Loretto · 7:30 pm";
+
+/* ----------------------------------------------------------------------
+   STATE
+   seeds: { "611.a": "North Penn", ... }   chosen school per first-round slot
+   winners: { "611": "a" | "b" }           which side advances
+---------------------------------------------------------------------- */
+let state = { seeds:{}, winners:{} };
+let scenarios = [];      // [{name, state}]
+let activeIdx = -1;      // index into scenarios, or -1 for unsaved working copy
+let dirty = false;
+
+const LS_KEY = "piaa6a_vb_2026_scenarios_v1";
+
+/* ---- helpers to resolve who's in each slot ---- */
+function seedSchools(dists){
+  const out = [];
+  dists.forEach(d => (DISTRICTS[d]||[]).forEach(s => out.push({ d, s })));
+  return out;
+}
+// Returns the resolved team name for a feeder, or "" if undecided.
+function resolveFeeder(feeder, slotKey){
+  if (feeder.type === "seed") return state.seeds[slotKey] || "";
+  const w = state.winners[feeder.gid];
+  if (!w) return "";
+  const g = GById[feeder.gid];
+  return resolveFeeder(g[w], feeder.gid + "." + w);
+}
+function teamName(gid, side){
+  return resolveFeeder(GById[gid][side], gid + "." + side);
+}
+
+/* ----------------------------------------------------------------------
+   RENDER
+---------------------------------------------------------------------- */
+const bracketEl = document.getElementById("bracket");
+
+function render(){
+  bracketEl.innerHTML = "";
+  // connector layer sits behind the columns
+  const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("class","connectors");
+  svg.id = "connectors";
+  bracketEl.appendChild(svg);
+
+  for (let r=0; r<4; r++){
+    const col = document.createElement("div");
+    col.className = "round" + (r===3 ? " r-final" : "");
+    const head = document.createElement("div");
+    head.className = "round-head";
+    head.innerHTML = `<div class="rn">${ROUND_META[r].rn}</div><div class="rd">${ROUND_META[r].rd}</div>`;
+    col.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "round-body";
+    GAMES.filter(g=>g.round===r).forEach(g => body.appendChild(renderMatch(g)));
+
+    if (r===3){
+      const site = document.createElement("div");
+      site.className = "final-site";
+      site.textContent = FINAL_SITE;
+      body.appendChild(site);
+      body.appendChild(renderChamp());
+    }
+    col.appendChild(body);
+    bracketEl.appendChild(col);
+  }
+  renderScenarios();
+  renderFoot();
+  persistWorking();
+  // draw connectors after layout settles
+  requestAnimationFrame(()=>requestAnimationFrame(drawConnectors));
+}
+
+/* Measured elbow connectors between each game and its two feeder games.
+   A line turns green once the feeder match is decided (a team has advanced). */
+function drawConnectors(){
+  const svg = document.getElementById("connectors");
+  if (!svg) return;
+  const bb = bracketEl.getBoundingClientRect();
+  const W = bracketEl.scrollWidth, H = bracketEl.scrollHeight;
+  svg.setAttribute("width", W); svg.setAttribute("height", H);
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const css = getComputedStyle(document.documentElement);
+  const wire = css.getPropertyValue("--wire").trim() || "#b3ae9f";
+  const win = css.getPropertyValue("--win").trim() || "#1f7a4d";
+  let out = "";
+  GAMES.forEach(g=>{
+    ["a","b"].forEach(side=>{
+      const f = g[side];
+      if (f.type !== "from") return;
+      const childEl = bracketEl.querySelector(`.match[data-gid="${f.gid}"]`);
+      const parentEl = bracketEl.querySelector(`.match[data-gid="${g.id}"]`);
+      if (!childEl || !parentEl) return;
+      const c = childEl.getBoundingClientRect();
+      const p = parentEl.getBoundingClientRect();
+      const x1 = c.right - bb.left,  y1 = c.top + c.height/2 - bb.top;
+      const x2 = p.left  - bb.left,  y2 = p.top + p.height/2 - bb.top;
+      const midx = (x1 + x2) / 2;
+      const decided = !!state.winners[f.gid];
+      const col = decided ? win : wire;
+      const wdt = decided ? 2.4 : 1.4;
+      out += `<path d="M${x1} ${y1} H${midx} V${y2} H${x2}" fill="none" stroke="${col}" stroke-width="${wdt}" stroke-linejoin="round" stroke-linecap="round"/>`;
+    });
+  });
+  svg.innerHTML = out;
+}
+window.addEventListener("resize", ()=>{ clearTimeout(window.__cwt); window.__cwt=setTimeout(drawConnectors,120); });
+if (document.fonts && document.fonts.ready){ document.fonts.ready.then(drawConnectors); }
+
+function renderMatch(g){
+  const m = document.createElement("div");
+  m.className = "match" + (state.winners[g.id] ? " decided" : "");
+  m.dataset.gid = g.id;
+  const gid = document.createElement("div");
+  gid.className = "gid";
+  gid.textContent = "(" + g.id + ")";
+  m.appendChild(gid);
+  ["a","b"].forEach(side => m.appendChild(renderSlot(g, side)));
+  return m;
+}
+
+function renderSlot(g, side){
+  const feeder = g[side];
+  const slotKey = g.id + "." + side;
+  const row = document.createElement("div");
+  row.className = "slot" + (state.winners[g.id]===side ? " winner" : "");
+
+  // seed badge
+  const seed = document.createElement("div");
+  seed.className = "seed";
+  if (feeder.type === "seed"){
+    seed.textContent = feeder.label;
+    if (feeder.note === "play-in") seed.classList.add("playin");
+  } else {
+    seed.textContent = "(" + feeder.gid + ")";
+  }
+  row.appendChild(seed);
+
+  // pick area
+  const pick = document.createElement("div");
+  pick.className = "pick";
+  if (feeder.type === "seed"){
+    const sel = document.createElement("select");
+    sel.setAttribute("aria-label", "Pick team for seed " + feeder.label);
+    const groups = {};
+    feeder.dists.forEach(d => groups[d] = seedSchools([d]));
+    const ph = new Option(feeder.dists.length>1
+        ? "— pick seed "+feeder.label+" —"
+        : "— pick "+feeder.label+" —", "");
+    sel.add(ph);
+    feeder.dists.forEach(d => {
+      const og = document.createElement("optgroup");
+      og.label = "District " + d;
+      groups[d].forEach(({s}) => og.appendChild(new Option(s, s)));
+      sel.add(og);
+    });
+    sel.value = state.seeds[slotKey] || "";
+    sel.addEventListener("change", () => {
+      if (sel.value) state.seeds[slotKey] = sel.value;
+      else delete state.seeds[slotKey];
+      // changing a seed invalidates any downstream pick relying on it
+      clearDownstream(g.id, side);
+      markDirty(); render();
+    });
+    pick.appendChild(sel);
+  } else {
+    const name = teamName(g.id, side);
+    const span = document.createElement("div");
+    span.style.cssText = "padding:9px 8px;font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+    if (name){ span.textContent = name; }
+    else { span.innerHTML = '<span style="color:var(--ink-soft);font-style:italic">winner of ('+feeder.gid+')</span>'; }
+    pick.appendChild(span);
+  }
+  row.appendChild(pick);
+
+  // advance button
+  const adv = document.createElement("button");
+  adv.className = "advance";
+  adv.innerHTML = state.winners[g.id]===side ? "✓" : "▸";
+  adv.title = "Advance this team";
+  const resolved = teamName(g.id, side);
+  adv.disabled = !resolved;
+  adv.addEventListener("click", () => {
+    if (state.winners[g.id]===side){ delete state.winners[g.id]; clearDownstream(g.id,null); }
+    else { state.winners[g.id] = side; }
+    markDirty(); render();
+  });
+  row.appendChild(adv);
+  return row;
+}
+
+function renderChamp(){
+  const c = document.createElement("div");
+  c.className = "champ";
+  const champ = state.winners["641"] ? teamName("641", state.winners["641"]) : "";
+  c.innerHTML = `<div class="lbl">PIAA 6A Champion</div>
+    <div class="name ${champ?"":"empty"}">${champ || "undecided"}</div>`;
+  return c;
+}
+
+/* When a seed or winner changes, drop any later winner that depended on it. */
+function clearDownstream(gid, side){
+  // find the game this game feeds into
+  const parent = GAMES.find(g => (g.a.type==="from"&&g.a.gid===gid) || (g.b.type==="from"&&g.b.gid===gid));
+  if (!parent) return;
+  const parentSide = (parent.a.type==="from"&&parent.a.gid===gid) ? "a" : "b";
+  // if parent's winner was this slot's team, it's now possibly stale → clear it
+  if (state.winners[parent.id] === parentSide){
+    delete state.winners[parent.id];
+    clearDownstream(parent.id, null);
+  }
+}
+
+/* ----------------------------------------------------------------------
+   SCENARIOS (saved in localStorage; working copy kept separately)
+---------------------------------------------------------------------- */
+function renderScenarios(){
+  const box = document.getElementById("scenarios");
+  box.querySelectorAll(".chip").forEach(n=>n.remove());
+  scenarios.forEach((sc, i) => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (i===activeIdx ? " active" : "") + (i===activeIdx && dirty ? " dirty" : "");
+    chip.innerHTML = (i===activeIdx && dirty ? '<span class="dot"></span>' : '') +
+      `<span>${escapeHtml(sc.name)}</span><span class="x" title="Delete">×</span>`;
+    chip.addEventListener("click", (e)=>{
+      if (e.target.classList.contains("x")){ e.stopPropagation(); deleteScenario(i); return; }
+      loadScenario(i);
+    });
+    box.appendChild(chip);
+  });
+  if (!scenarios.length){
+    const hint = document.createElement("span");
+    hint.className="chip"; hint.style.cssText="border-style:dashed;cursor:default;color:var(--ink-soft)";
+    hint.textContent = "none yet — fill the bracket and hit “Save scenario”";
+    box.appendChild(hint);
+  }
+}
+
+function saveScenario(){
+  const def = "Scenario " + (scenarios.length+1);
+  const name = (window.promptName ? null : null); // prompt() is inert in artifacts
+  openNamePrompt(def, (nm)=>{
+    scenarios.push({ name: nm || def, state: cloneState(state) });
+    activeIdx = scenarios.length-1; dirty=false;
+    persistAll(); render(); toast("Saved “"+(nm||def)+"”");
+  });
+}
+function loadScenario(i){
+  state = cloneState(scenarios[i].state);
+  activeIdx = i; dirty = false;
+  render(); toast("Loaded “"+scenarios[i].name+"”");
+}
+function deleteScenario(i){
+  const nm = scenarios[i].name;
+  scenarios.splice(i,1);
+  if (activeIdx===i){ activeIdx=-1; }
+  else if (activeIdx>i){ activeIdx--; }
+  persistAll(); render(); toast("Deleted “"+nm+"”");
+}
+function updateActive(){
+  if (activeIdx<0){ saveScenario(); return; }
+  scenarios[activeIdx].state = cloneState(state); dirty=false;
+  persistAll(); render(); toast("Updated “"+scenarios[activeIdx].name+"”");
+}
+
+/* inline name prompt (confirm/prompt are disabled in artifacts) */
+function openNamePrompt(def, cb){
+  const back = document.createElement("div");
+  back.style.cssText="position:fixed;inset:0;background:rgba(10,14,22,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;";
+  const card = document.createElement("div");
+  card.style.cssText="background:var(--panel);color:var(--ink);border-radius:12px;box-shadow:var(--shadow);padding:18px;max-width:340px;width:100%;border:1px solid var(--line);";
+  card.innerHTML = `<div style="font-weight:700;font-size:14px;margin-bottom:10px">Name this scenario</div>`;
+  const inp = document.createElement("input");
+  inp.value = def; inp.style.cssText="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font-size:13px;font-family:var(--f-body);";
+  card.appendChild(inp);
+  const row = document.createElement("div");
+  row.style.cssText="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;";
+  const cancel = document.createElement("button"); cancel.className="btn ghost"; cancel.textContent="Cancel";
+  const ok = document.createElement("button"); ok.className="btn primary"; ok.textContent="Save";
+  row.appendChild(cancel); row.appendChild(ok); card.appendChild(row);
+  back.appendChild(card); document.body.appendChild(back);
+  inp.focus(); inp.select();
+  const close=()=>back.remove();
+  cancel.onclick=close;
+  ok.onclick=()=>{ const v=inp.value.trim(); close(); cb(v); };
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ok.click();} if(e.key==="Escape"){close();} });
+  back.addEventListener("click",e=>{ if(e.target===back) close(); });
+}
+
+/* ----------------------------------------------------------------------
+   PERSISTENCE
+---------------------------------------------------------------------- */
+function cloneState(s){ return JSON.parse(JSON.stringify(s)); }
+function persistAll(){
+  try { localStorage.setItem(LS_KEY, JSON.stringify({ scenarios, working: state, activeIdx })); } catch(e){}
+}
+function persistWorking(){
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    const obj = raw ? JSON.parse(raw) : {};
+    obj.scenarios = scenarios; obj.working = state; obj.activeIdx = activeIdx;
+    localStorage.setItem(LS_KEY, JSON.stringify(obj));
+  } catch(e){}
+}
+function loadAll(){
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    scenarios = Array.isArray(obj.scenarios) ? obj.scenarios : [];
+    if (obj.working) state = obj.working;
+    activeIdx = Number.isInteger(obj.activeIdx) ? obj.activeIdx : -1;
+  } catch(e){}
+}
+
+/* ----------------------------------------------------------------------
+   ACTIONS
+---------------------------------------------------------------------- */
+function markDirty(){ if (activeIdx>=0) dirty=true; }
+
+function randomFill(){
+  state = { seeds:{}, winners:{} };
+  // fill first-round seeds
+  GAMES.filter(g=>g.round===0).forEach(g=>{
+    ["a","b"].forEach(side=>{
+      const f=g[side];
+      const pool=seedSchools(f.dists);
+      if (pool.length){ state.seeds[g.id+"."+side] = pool[Math.floor(Math.random()*pool.length)].s; }
+    });
+  });
+  // avoid duplicate schools across the field (District 1 appears many times)
+  dedupeSeeds();
+  // run winners through all rounds
+  GAMES.forEach(g=>{ state.winners[g.id] = Math.random()<0.5 ? "a":"b"; });
+  markDirty(); render(); toast("Random bracket filled");
+}
+function dedupeSeeds(){
+  const used=new Set();
+  GAMES.filter(g=>g.round===0).forEach(g=>["a","b"].forEach(side=>{
+    const key=g.id+"."+side; let v=state.seeds[key];
+    const f=g[side]; const pool=seedSchools(f.dists).map(x=>x.s);
+    let guard=0;
+    while(v && used.has(v) && guard<40){ v=pool[Math.floor(Math.random()*pool.length)]; guard++; }
+    if(v){ used.add(v); state.seeds[key]=v; }
+  }));
+}
+function clearWinners(){ state.winners={}; markDirty(); render(); toast("Winners cleared"); }
+function resetSeeds(){ state={seeds:{},winners:{}}; markDirty(); render(); toast("Bracket reset"); }
+
+/* ----------------------------------------------------------------------
+   MISC
+---------------------------------------------------------------------- */
+function renderFoot(){
+  document.getElementById("foot").innerHTML =
+    'Seeds are shown as <strong>district–rank</strong> (e.g. <em>1-1</em> = District 1’s top seed). '+
+    'Each district winner is decided in early-November district playoffs, so every dropdown lists <strong>all Class 6A schools in that district</strong> for you to assign. '+
+    'Starred slots (<em>6-1 / 10-1</em>, <em>2-1 / 4-1</em>) are inter-district play-ins and list both districts. '+
+    'School lists come from the PIAA Class 6A girls’ volleyball classification; bracket structure from the official 2026 6A bracket. '+
+    'Scenarios save in this browser only.';
+}
+let toastT;
+function toast(msg){
+  const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1800);
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ----------------------------------------------------------------------
+   PRINT — build a clean static sheet of the current picks, then print.
+---------------------------------------------------------------------- */
+function buildPrintSheet(){
+  const sheet = document.getElementById("printsheet");
+  const scName = activeIdx>=0 ? scenarios[activeIdx].name : "Working bracket";
+  const champ = state.winners["641"] ? teamName("641", state.winners["641"]) : "";
+  const today = new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
+
+  let cols = "";
+  for (let r=0; r<4; r++){
+    let matches = "";
+    GAMES.filter(g=>g.round===r).forEach(g=>{
+      let slots = "";
+      ["a","b"].forEach(side=>{
+        const f = g[side];
+        const seedLabel = f.type==="seed" ? f.label : "("+f.gid+")";
+        const name = teamName(g.id, side);
+        const won = state.winners[g.id]===side;
+        const tbd = !name;
+        const display = name || (f.type==="seed" ? "— ("+seedLabel+") —" : "winner of ("+f.gid+")");
+        slots += `<div class="ps-slot${won?" win":""}">`+
+                 `<span class="ps-seed">${escapeHtml(seedLabel)}</span>`+
+                 `<span class="ps-team${tbd?" tbd":""}">${escapeHtml(display)}</span>`+
+                 `</div>`;
+      });
+      matches += `<div class="ps-match"><div class="ps-gid">(${g.id})</div>${slots}</div>`;
+    });
+    cols += `<div class="ps-round"><div class="ps-rh">${ROUND_META[r].rn}<small>${ROUND_META[r].rd}</small></div>${matches}</div>`;
+  }
+
+  sheet.innerHTML =
+    `<div class="ps-head">
+       <div>
+         <div class="ps-title">2026 PIAA 6A Girls' Volleyball</div>
+         <div class="ps-meta">${escapeHtml(scName)} · printed ${today}</div>
+       </div>
+       <div class="ps-champ">
+         <div class="cl">6A Champion</div>
+         <div class="cn ${champ?"":"empty"}">${champ?escapeHtml(champ):"undecided"}</div>
+       </div>
+     </div>
+     <div class="ps-bracket">${cols}</div>
+     <div class="ps-foot">Final: ${FINAL_SITE}. &nbsp; Seeds shown as district–rank; starred first-round slots are inter-district play-ins. School lists from the PIAA Class 6A girls' volleyball classification; bracket from the official 2026 6A bracket.</div>`;
+}
+function doPrint(){
+  buildPrintSheet();
+  try { window.print(); }
+  catch(e){}
+}
+
+/* theme toggle */
+document.getElementById("btn-theme").addEventListener("click",()=>{
+  const cur=document.documentElement.getAttribute("data-theme");
+  const isDark = cur ? cur==="dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", isDark?"light":"dark");
+});
+
+document.getElementById("btn-random").addEventListener("click",randomFill);
+document.getElementById("btn-clearwin").addEventListener("click",clearWinners);
+document.getElementById("btn-reset").addEventListener("click",resetSeeds);
+document.getElementById("btn-save").addEventListener("click",saveScenario);
+document.getElementById("btn-print").addEventListener("click",doPrint);
+// keep the native Ctrl/Cmd-P shortcut producing the clean sheet too
+window.addEventListener("beforeprint", buildPrintSheet);
+
+/* boot */
+loadAll();
+render();
+})();
+</script>
+
+</body></html>
