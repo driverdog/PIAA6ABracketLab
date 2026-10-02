@@ -49,6 +49,8 @@
   .mast h1 { font-family: var(--f-display); font-weight: 600; text-transform: uppercase; letter-spacing: .02em; font-size: clamp(22px, 3.4vw, 34px); margin: 0; line-height: 1; color: var(--navy); text-wrap: balance; }
   .mast .sub { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; letter-spacing: .01em; }
   .mast .ball { font-family: var(--f-display); font-weight: 600; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); border: 1.5px solid var(--gold); border-radius: 100px; padding: 5px 12px; white-space: nowrap; }
+  .mast-right { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
+  .copyright { font-family: var(--f-display); font-weight: 600; font-size: 13px; letter-spacing: .04em; color: var(--navy); white-space: nowrap; }
 
   /* ---- Control bar ---- */
   .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
@@ -72,14 +74,21 @@
   .chip.dirty .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); display: inline-block; }
 
   /* ---- Bracket rail ---- */
-  .rail-wrap { margin-top: 18px; overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; }
+  .rail-outer { position: relative; margin-top: 18px; }
+  /* sticky round-label strip: shown only on small screens, kept in sync with scroll via JS */
+  .rail-head { display: none; }
+  .rail-wrap { overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+  /* right-edge fade: signals more bracket to scroll to; hidden at the end of the scroll */
+  .rail-fade { position: absolute; top: 0; right: 0; bottom: 10px; width: 34px; pointer-events: none; z-index: 3;
+    background: linear-gradient(to right, transparent, var(--bg)); opacity: 0; transition: opacity .18s; }
+  .rail-fade.show { opacity: 1; }
   .bracket { display: flex; gap: 0; min-width: min-content; align-items: stretch; position: relative; }
   .connectors { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 0; overflow: visible; }
-  .round { display: flex; flex-direction: column; min-width: 210px; flex: 0 0 auto; padding: 0 14px; position: relative; z-index: 1; }
+  .round { display: flex; flex-direction: column; min-width: 210px; flex: 0 0 auto; padding: 0 14px; position: relative; z-index: 1; scroll-snap-align: start; }
   .round.r-final { min-width: 230px; }
   .round-body { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-around; }
   .round.r-final .round-body { justify-content: center; gap: 4px; }
-  .round-head { flex: 0 0 auto; text-align: center; margin-bottom: 8px; }
+  .round-head { flex: 0 0 auto; text-align: center; margin-bottom: 8px; background: var(--bg); }
   .round-head .rn { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .08em; font-size: 13px; font-weight: 600; color: var(--navy); }
   .round-head .rd { font-size: 10.5px; color: var(--ink-soft); letter-spacing: .02em; }
 
@@ -119,8 +128,27 @@
   .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--navy); color: #fff; font-size: 13px; padding: 10px 18px; border-radius: 100px; box-shadow: var(--shadow); opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  @media (max-width: 500px) {
-    .round { min-width: 188px; }
+  /* ---- Small screens: phones + tablet-portrait (desktop >=900px is untouched) ---- */
+  @media (max-width: 899px) {
+    .rail-wrap { scroll-snap-type: x proximity; }
+    .round { min-width: 192px; }
+    .round.r-final { min-width: 208px; }
+    /* pinned round-label strip, synced to horizontal scroll in JS */
+    .rail-head { display: block; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+      background: var(--bg); border-bottom: 1px solid var(--line); overflow: hidden; }
+    .rail-head .rh-inner { display: flex; }
+    .rail-head .rh-cell { flex: 0 0 auto; text-align: center; padding: 7px 14px 6px; }
+    .rail-head .rh-cell .rn { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .08em; font-size: 12px; font-weight: 600; color: var(--navy); }
+    .rail-head .rh-cell .rd { font-size: 9.5px; color: var(--ink-soft); }
+    .round-head { display: none; }  /* replaced by the pinned strip */
+    /* touch targets */
+    .advance { width: 46px; }
+    .pick select { font-size: 16px; padding: 12px 8px; }  /* 16px prevents iOS focus-zoom */
+    .seed { min-width: 44px; font-size: 11px; }
+  }
+  @media (max-width: 420px) {
+    .round { min-width: 176px; padding: 0 10px; }
+    .round.r-final { min-width: 196px; }
     .seed { min-width: 40px; }
   }
 
@@ -167,7 +195,10 @@
       <h1>2026 PIAA 6A Girls' Volleyball — Bracket Lab</h1>
       <div class="sub">Pick each district seed, run the winners, and save what-if scenarios. Championship bracket, 16 teams.</div>
     </div>
-    <div class="ball">State Championship</div>
+    <div class="mast-right">
+      <div class="ball">State Championship</div>
+      <div class="copyright">© 2026 Monty Leach</div>
+    </div>
   </header>
 
   <div class="bar">
@@ -184,8 +215,12 @@
     <span class="lbl">Scenarios</span>
   </div>
 
-  <div class="rail-wrap">
-    <div class="bracket" id="bracket"></div>
+  <div class="rail-outer">
+    <div class="rail-head" id="railhead" aria-hidden="true"><div class="rh-inner" id="rhinner"></div></div>
+    <div class="rail-wrap" id="railwrap">
+      <div class="bracket" id="bracket"></div>
+    </div>
+    <div class="rail-fade" id="railfade"></div>
   </div>
 
   <div class="foot" id="foot"></div>
@@ -323,8 +358,8 @@ function render(){
   renderScenarios();
   renderFoot();
   persistWorking();
-  // draw connectors after layout settles
-  requestAnimationFrame(()=>requestAnimationFrame(drawConnectors));
+  // draw connectors + sync the sticky label strip after layout settles
+  requestAnimationFrame(()=>requestAnimationFrame(refreshLayout));
 }
 
 /* Measured elbow connectors between each game and its two feeder games.
@@ -360,8 +395,51 @@ function drawConnectors(){
   });
   svg.innerHTML = out;
 }
-window.addEventListener("resize", ()=>{ clearTimeout(window.__cwt); window.__cwt=setTimeout(drawConnectors,120); });
-if (document.fonts && document.fonts.ready){ document.fonts.ready.then(drawConnectors); }
+
+/* Sticky round-label strip (small screens) + right-edge scroll fade.
+   Cells are sized from the real columns, so labels stay aligned at any width. */
+function syncRail(){
+  const wrap = document.getElementById("railwrap");
+  const inner = document.getElementById("rhinner");
+  const fade = document.getElementById("railfade");
+  if (!wrap || !inner) return;
+  const cols = bracketEl.querySelectorAll(".round");
+  // (re)build header cells to match current column widths
+  if (inner.childElementCount !== cols.length) inner.innerHTML = "";
+  cols.forEach((col, i) => {
+    let cell = inner.children[i];
+    if (!cell){
+      cell = document.createElement("div");
+      cell.className = "rh-cell";
+      cell.innerHTML = `<div class="rn"></div><div class="rd"></div>`;
+      inner.appendChild(cell);
+    }
+    cell.style.width = col.offsetWidth + "px";
+    cell.querySelector(".rn").textContent = ROUND_META[i].rn;
+    cell.querySelector(".rd").textContent = ROUND_META[i].rd;
+  });
+  // keep the strip aligned with horizontal scroll
+  inner.style.transform = "translateX(" + (-wrap.scrollLeft) + "px)";
+  // edge fade when there is more to the right
+  if (fade){
+    const more = wrap.scrollLeft + wrap.clientWidth < wrap.scrollWidth - 2;
+    fade.classList.toggle("show", more);
+  }
+}
+function refreshLayout(){ drawConnectors(); syncRail(); }
+
+window.addEventListener("resize", ()=>{ clearTimeout(window.__cwt); window.__cwt=setTimeout(refreshLayout,120); });
+window.addEventListener("orientationchange", ()=>{ setTimeout(refreshLayout, 250); });
+if (window.visualViewport){ window.visualViewport.addEventListener("resize", ()=>{ clearTimeout(window.__vvt); window.__vvt=setTimeout(refreshLayout,120); }); }
+if (document.fonts && document.fonts.ready){ document.fonts.ready.then(refreshLayout); }
+// horizontal scroll: move the label strip and update the fade (cheap, rAF-throttled)
+(function(){
+  const wrap = document.getElementById("railwrap");
+  if (wrap) wrap.addEventListener("scroll", ()=>{
+    if (window.__rafScroll) return;
+    window.__rafScroll = requestAnimationFrame(()=>{ window.__rafScroll=0; syncRail(); });
+  }, { passive:true });
+})();
 
 function renderMatch(g){
   const m = document.createElement("div");
@@ -664,7 +742,7 @@ function buildPrintSheet(){
        </div>
      </div>
      <div class="ps-bracket">${cols}</div>
-     <div class="ps-foot">Final: ${FINAL_SITE}. &nbsp; Seeds shown as district–rank; starred first-round slots are inter-district play-ins. School lists from the PIAA Class 6A girls' volleyball classification; bracket from the official 2026 6A bracket.</div>`;
+     <div class="ps-foot"><strong>© 2026 Monty Leach.</strong> &nbsp; Final: ${FINAL_SITE}. &nbsp; Seeds shown as district–rank; starred first-round slots are inter-district play-ins. School lists from the PIAA Class 6A girls' volleyball classification; bracket from the official 2026 6A bracket.</div>`;
 }
 function doPrint(){
   buildPrintSheet();
