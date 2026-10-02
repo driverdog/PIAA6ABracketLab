@@ -64,6 +64,13 @@
   .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .spacer { flex: 1; }
 
+  /* ---- First-visit tip ---- */
+  .tip { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); background: color-mix(in srgb, var(--accent) 9%, var(--panel)); border-radius: 9px; font-size: 13px; color: var(--ink); }
+  .tip-ico { font-size: 17px; color: var(--accent); line-height: 1; }
+  .tip span:nth-child(2) { flex: 1; min-width: 0; }
+  .tip-x { flex: 0 0 auto; font-family: var(--f-body); font-size: 12.5px; font-weight: 600; border: 1px solid var(--accent); color: var(--accent); background: transparent; padding: 5px 12px; border-radius: 6px; cursor: pointer; }
+  .tip-x:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+
   /* ---- Scenario strip ---- */
   .scenarios { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
   .scenarios .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft); font-weight: 700; margin-right: 2px; }
@@ -84,8 +91,8 @@
   .rail-fade.show { opacity: 1; }
   .bracket { display: flex; gap: 0; min-width: min-content; align-items: stretch; position: relative; }
   .connectors { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 0; overflow: visible; }
-  .round { display: flex; flex-direction: column; min-width: 210px; flex: 0 0 auto; padding: 0 14px; position: relative; z-index: 1; scroll-snap-align: start; }
-  .round.r-final { min-width: 230px; }
+  .round { display: flex; flex-direction: column; flex: 0 0 210px; padding: 0 14px; position: relative; z-index: 1; scroll-snap-align: start; }
+  .round.r-final { flex-basis: 230px; }
   .round-body { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-around; }
   .round.r-final .round-body { justify-content: center; gap: 4px; }
   .round-head { flex: 0 0 auto; text-align: center; margin-bottom: 8px; background: var(--bg); }
@@ -97,22 +104,29 @@
   .match .gid { font-family: var(--f-num); font-size: 9.5px; color: var(--ink-soft); text-align: right; padding: 3px 8px 0; letter-spacing: .04em; }
   .slot { display: flex; align-items: stretch; gap: 0; border-top: 1px solid var(--line-soft); }
   .slot:first-of-type { border-top: none; }
-  .seed { font-family: var(--f-num); font-size: 10.5px; font-weight: 600; color: #fff; background: var(--navy); display: flex; align-items: center; justify-content: center; min-width: 46px; padding: 0 5px; text-align: center; letter-spacing: -.02em; }
-  .seed.playin { background: var(--gold); }
+  .seed { font-family: var(--f-num); font-size: 10.5px; font-weight: 600; color: #fff; background: var(--navy); display: flex; align-items: center; justify-content: center; flex: 0 0 46px; width: 46px; padding: 0 3px; text-align: center; letter-spacing: -.02em; overflow: hidden; white-space: nowrap; }
+  .seed.playin { background: var(--gold); font-size: 8px; letter-spacing: -.2px; }
   :root[data-theme="dark"] .seed { color: #0e1422; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seed { color: #0e1422; } }
   .pick { flex: 1; min-width: 0; display: flex; align-items: center; }
   .pick select { width: 100%; border: none; background: transparent; color: var(--ink); font-family: var(--f-body); font-size: 12.5px; padding: 9px 8px; cursor: pointer; appearance: none; -webkit-appearance: none; min-width: 0; text-overflow: ellipsis; }
   .pick select:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
   .pick select option { color: #111; }
-  .advance { border: none; background: transparent; cursor: pointer; width: 34px; display: flex; align-items: center; justify-content: center; color: var(--line); border-left: 1px solid var(--line-soft); font-size: 15px; transition: color .12s, background .12s; }
-  .advance:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
-  .advance:disabled { cursor: default; opacity: .35; }
+  .advance { border: none; background: transparent; cursor: pointer; width: 40px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; border-left: 1px solid var(--line-soft); transition: background .12s; }
+  .advance .ring { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); box-sizing: border-box; transition: border-color .12s, background .12s; }
+  .advance .chk { width: 18px; height: 18px; border-radius: 50%; background: var(--win); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; line-height: 1; }
+  .slot.selectable { cursor: pointer; }
+  .slot.selectable:hover { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+  .slot.selectable:hover .advance .ring { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); }
+  .advance:disabled { cursor: default; }
+  .advance:disabled .ring { border-style: dashed; opacity: .5; }
   .advance:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .slot.selectable:focus-within { outline: none; }
   .slot.winner { background: var(--win-bg); }
   .slot.winner .pick select { font-weight: 700; color: var(--win); }
-  .slot.winner .advance { color: var(--win); }
+  .slot.winner .pick > div { font-weight: 700; color: var(--win); }
   .slot.winner .seed { background: var(--win); }
+  .slot.winner.selectable:hover { background: color-mix(in srgb, var(--win) 20%, var(--panel)); }
 
   .match.decided { border-color: color-mix(in srgb, var(--win) 45%, var(--line)); }
 
@@ -131,8 +145,8 @@
   /* ---- Small screens: phones + tablet-portrait (desktop >=900px is untouched) ---- */
   @media (max-width: 899px) {
     .rail-wrap { scroll-snap-type: x proximity; }
-    .round { min-width: 192px; }
-    .round.r-final { min-width: 208px; }
+    .round { flex-basis: 240px; }
+    .round.r-final { flex-basis: 256px; }
     /* pinned round-label strip, synced to horizontal scroll in JS */
     .rail-head { display: block; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
       background: var(--bg); border-bottom: 1px solid var(--line); overflow: hidden; }
@@ -141,15 +155,15 @@
     .rail-head .rh-cell .rn { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .08em; font-size: 12px; font-weight: 600; color: var(--navy); }
     .rail-head .rh-cell .rd { font-size: 9.5px; color: var(--ink-soft); }
     .round-head { display: none; }  /* replaced by the pinned strip */
-    /* touch targets */
-    .advance { width: 46px; }
+    /* touch targets — the whole row advances, so the circle can be compact */
+    .advance { width: 40px; }
     .pick select { font-size: 16px; padding: 12px 8px; }  /* 16px prevents iOS focus-zoom */
-    .seed { min-width: 44px; font-size: 11px; }
+    .seed { font-size: 11px; }
+    .seed.playin { font-size: 8px; }
   }
   @media (max-width: 420px) {
-    .round { min-width: 176px; padding: 0 10px; }
-    .round.r-final { min-width: 196px; }
-    .seed { min-width: 40px; }
+    .round { flex-basis: 224px; padding: 0 10px; }
+    .round.r-final { flex-basis: 240px; }
   }
 
   /* ---- Print sheet (hidden on screen; the only thing shown when printing) ---- */
@@ -193,7 +207,7 @@
   <header class="mast">
     <div>
       <h1>2026 PIAA 6A Girls' Volleyball — Bracket Lab</h1>
-      <div class="sub">Pick each district seed, run the winners, and save what-if scenarios. Championship bracket, 16 teams.</div>
+      <div class="sub">Pick each district seed from the dropdowns, then <strong>tap a team</strong> to send it to the next round. Save what-if scenarios as you go.</div>
     </div>
     <div class="mast-right">
       <div class="ball">State Championship</div>
@@ -213,6 +227,12 @@
 
   <div class="scenarios" id="scenarios">
     <span class="lbl">Scenarios</span>
+  </div>
+
+  <div class="tip" id="tip" hidden>
+    <span class="tip-ico" aria-hidden="true">○</span>
+    <span>Pick teams from the dropdowns, then <strong>tap a team</strong> (or its circle) to advance it. Tap again to undo.</span>
+    <button class="tip-x" id="tip-x" aria-label="Dismiss tip">Got it</button>
   </div>
 
   <div class="rail-outer">
@@ -264,8 +284,8 @@ const GAMES = [
   // First round (611–618), Nov 11
   { id:"611", round:0, a:SEED("1-1",[1]),           b:SEED("3-3",[3]) },
   { id:"612", round:0, a:SEED("12-1",[12]),         b:SEED("1-5",[1]) },
-  { id:"613", round:0, a:SEED("6-1 / 10-1*",[6,10],"play-in"), b:SEED("3-2",[3]) },
-  { id:"614", round:0, a:SEED("2-1 / 4-1*",[2,4],"play-in"),   b:SEED("1-3",[1]) },
+  { id:"613", round:0, a:SEED("6-1/10-1",[6,10],"play-in"), b:SEED("3-2",[3]) },
+  { id:"614", round:0, a:SEED("2-1/4-1",[2,4],"play-in"),   b:SEED("1-3",[1]) },
   { id:"615", round:0, a:SEED("3-1",[3]),           b:SEED("1-6",[1]) },
   { id:"616", round:0, a:SEED("11-1",[11]),         b:SEED("1-4",[1]) },
   { id:"617", round:0, a:SEED("1-2",[1]),           b:SEED("11-2",[11]) },
@@ -507,19 +527,33 @@ function renderSlot(g, side){
   }
   row.appendChild(pick);
 
-  // advance button
-  const adv = document.createElement("button");
-  adv.className = "advance";
-  adv.innerHTML = state.winners[g.id]===side ? "✓" : "▸";
-  adv.title = "Advance this team";
   const resolved = teamName(g.id, side);
+  const isWinner = state.winners[g.id]===side;
+
+  // winner selector — clear "pick one" control
+  const adv = document.createElement("button");
+  adv.className = "advance" + (isWinner ? " on" : "");
+  adv.innerHTML = isWinner
+    ? '<span class="chk" aria-hidden="true">✓</span>'
+    : '<span class="ring" aria-hidden="true"></span>';
+  adv.setAttribute("aria-label", isWinner
+    ? "Winner: " + (resolved||"") + " — tap to undo"
+    : "Advance " + (resolved||"this team"));
+  adv.setAttribute("aria-pressed", isWinner ? "true" : "false");
   adv.disabled = !resolved;
-  adv.addEventListener("click", () => {
-    if (state.winners[g.id]===side){ delete state.winners[g.id]; clearDownstream(g.id,null); }
-    else { state.winners[g.id] = side; }
-    markDirty(); render();
-  });
   row.appendChild(adv);
+
+  // advancing: tap the selector, or anywhere on the row except the dropdown itself
+  if (resolved){
+    row.classList.add("selectable");
+    const toggle = (e) => {
+      if (e.target.closest("select")) return;   // let the dropdown do its job
+      if (state.winners[g.id]===side){ delete state.winners[g.id]; clearDownstream(g.id,null); }
+      else { state.winners[g.id] = side; }
+      markDirty(); render();
+    };
+    row.addEventListener("click", toggle);
+  }
   return row;
 }
 
@@ -688,7 +722,7 @@ function renderFoot(){
   document.getElementById("foot").innerHTML =
     'Seeds are shown as <strong>district–rank</strong> (e.g. <em>1-1</em> = District 1’s top seed). '+
     'Each district winner is decided in early-November district playoffs, so every dropdown lists <strong>all Class 6A schools in that district</strong> for you to assign. '+
-    'Starred slots (<em>6-1 / 10-1</em>, <em>2-1 / 4-1</em>) are inter-district play-ins and list both districts. '+
+    'Gold slots (<em>6-1/10-1</em>, <em>2-1/4-1</em>) are inter-district play-ins and list both districts. '+
     'School lists come from the PIAA Class 6A girls’ volleyball classification; bracket structure from the official 2026 6A bracket. '+
     'Scenarios save in this browser only.';
 }
@@ -742,7 +776,7 @@ function buildPrintSheet(){
        </div>
      </div>
      <div class="ps-bracket">${cols}</div>
-     <div class="ps-foot"><strong>© 2026 Monty Leach.</strong> &nbsp; Final: ${FINAL_SITE}. &nbsp; Seeds shown as district–rank; starred first-round slots are inter-district play-ins. School lists from the PIAA Class 6A girls' volleyball classification; bracket from the official 2026 6A bracket.</div>`;
+     <div class="ps-foot"><strong>© 2026 Monty Leach.</strong> &nbsp; Final: ${FINAL_SITE}. &nbsp; Seeds shown as district–rank; gold first-round slots are inter-district play-ins. School lists from the PIAA Class 6A girls' volleyball classification; bracket from the official 2026 6A bracket.</div>`;
 }
 function doPrint(){
   buildPrintSheet();
@@ -764,6 +798,19 @@ document.getElementById("btn-save").addEventListener("click",saveScenario);
 document.getElementById("btn-print").addEventListener("click",doPrint);
 // keep the native Ctrl/Cmd-P shortcut producing the clean sheet too
 window.addEventListener("beforeprint", buildPrintSheet);
+
+/* first-visit tip: show once, remember dismissal */
+const TIP_KEY = "piaa6a_vb_tip_dismissed_v1";
+(function(){
+  const tip = document.getElementById("tip");
+  let dismissed = false;
+  try { dismissed = localStorage.getItem(TIP_KEY) === "1"; } catch(e){}
+  if (!dismissed) tip.hidden = false;
+  document.getElementById("tip-x").addEventListener("click", ()=>{
+    tip.hidden = true;
+    try { localStorage.setItem(TIP_KEY, "1"); } catch(e){}
+  });
+})();
 
 /* boot */
 loadAll();
